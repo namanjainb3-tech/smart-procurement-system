@@ -78,7 +78,7 @@ src/
 ## 📦 Installation
 
 ```bash
-git clone https://github.com/your-username/smart-procurement.git
+git clone https://github.com/namanjainb3-tech/smart-procurement.git
 cd smart-procurement
 npm install
 npm run dev
