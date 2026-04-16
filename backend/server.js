@@ -13,6 +13,8 @@ app.use(express.json());
 const BASE_URL = "https://api.quickcommerceapi.com/v1/search";
 const API_KEY = process.env.QC_API_KEY;
 
+const PORT = process.env.PORT || 5000;
+
 // 📍 Default location (can make dynamic later)
 const LAT = 28.661252;
 const LON = 77.284175;
@@ -113,5 +115,5 @@ app.get("/api/search", async (req, res) => {
 
 // 🚀 START SERVER
 app.listen(5000, () => {
-  console.log("🚀 Server running at http://localhost:5000");
+  console.log(`🚀 Server running on port ${PORT}`);
 });

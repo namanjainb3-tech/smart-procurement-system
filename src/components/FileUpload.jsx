@@ -69,7 +69,7 @@ const FileUpload = ({ setItems, dark }) => {
       const results = await Promise.all(
         extractedItems.map(async (item) => {
           const res = await fetch(
-            `http://localhost:5000/api/search?query=${item.item}`
+            `https://smart-procurement-system.onrender.com/api/search?query=${item.item}`
           );
           return await res.json();
         })

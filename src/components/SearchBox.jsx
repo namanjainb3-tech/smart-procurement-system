@@ -10,7 +10,7 @@ const SearchBox = ({ setItems, query, setQuery }) => {
       setLoading(true);
 
       const res = await fetch(
-        `http://localhost:5000/api/search?query=${query}`
+        `https://smart-procurement-system.onrender.com/api/search?query=${query}`
       );
 
       const data = await res.json();
