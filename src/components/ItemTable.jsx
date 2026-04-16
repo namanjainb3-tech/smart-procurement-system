@@ -1,114 +1,163 @@
-import React from "react";
+import "./ItemTable.css";
+import { motion, AnimatePresence } from "framer-motion";
 
-const ItemTable = ({ items, setItems, dark }) => {
-  if (!items || items.length === 0) return null;
+const ItemTable = ({ items, setItems }) => {
+  if (!items.length) return null;
 
-  const handleDelete = (index) => {
-    setItems((prev) => prev.filter((_, i) => i !== index));
-  };
+  const platforms = ["blinkit", "zepto", "swiggy", "bbasket"];
 
   const updateQty = (index, change) => {
     setItems((prev) =>
       prev.map((item, i) => {
         if (i !== index) return item;
-
-        const currentQty = item.qty || 1;
-        const newQty = Math.max(1, currentQty + change);
-
-        return { ...item, qty: newQty };
+        return {
+          ...item,
+          qty: Math.max(1, (item.qty || 1) + change),
+        };
       })
     );
   };
 
+  const handleDelete = (index) => {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
   return (
-    <div className={`card p-3 ${dark ? "bg-secondary text-light" : ""}`}>
-      <h5>📊 Price Comparison</h5>
+    <motion.div
+      className="card premium-table mt-4"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      <h5 className="mb-3">📊 Price Comparison</h5>
 
-      <table className="table table-hover mt-3">
-        <thead className="table-dark">
-          <tr>
-            <th>Item</th>
-            <th>Amazon</th>
-            <th>Flipkart</th>
-            <th>BigBasket</th>
-            <th>Best</th>
-            <th>Qty</th>
-            <th>Action</th>
-          </tr>
-        </thead>
+      <div className="table-responsive">
+        <table className="table align-middle text-center">
+          <thead>
+            <tr>
+              <th>Item</th>
+              {platforms.map((p) => (
+                <th key={p}>{p}</th>
+              ))}
+              <th>Best</th>
+              <th>Qty</th>
+              <th></th>
+            </tr>
+          </thead>
 
-        <tbody>
-          {items.map((item, i) => {
-            const rawName = item.item;
-            if (!rawName || rawName.toLowerCase().includes("total"))
-              return null;
+          <tbody>
+            <AnimatePresence>
+              {items.map((item, i) => {
+                const qty = item.qty || 1;
 
-            const qty = item.qty || 1;
+                const prices = platforms
+                  .map((p) => item[p])
+                  .filter((v) => v != null);
 
-            // 🔥 SAFE PRICE HANDLING
-            const clean = (val) => (val == null ? Infinity : val);
+                const min = prices.length ? Math.min(...prices) : null;
 
-            const prices = {
-              amazon: clean(item.amazon) * qty,
-              flipkart: clean(item.flipkart) * qty,
-              bbasket: clean(item.bbasket) * qty,
-            };
-
-            const min = Math.min(...Object.values(prices));
-
-            return (
-              <tr key={i}>
-                <td>{rawName}</td>
-
-                {["amazon", "flipkart", "bbasket"].map((k) => (
-                  <td
-                    key={k}
-                    className={
-                      prices[k] === min ? "bg-success text-white" : ""
-                    }
+                return (
+                  <motion.tr
+                    key={item.item}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -50 }}
+                    transition={{ duration: 0.3 }}
                   >
-                    {prices[k] !== Infinity ? `₹${prices[k]}` : "N/A"}
-                  </td>
-                ))}
+                    {/* ITEM */}
+                    <td className="item-td">
+                      <div className="item-cell">
+                        <div className="img-box">
+                          <img
+                            src={item.image}
+                            alt=""
+                            onError={(e) =>
+                              (e.target.src =
+                                "https://via.placeholder.com/40")
+                            }
+                          />
+                        </div>
+                        <span className="item-name">{item.item}</span>
+                      </div>
+                    </td>
 
-                <td className="fw-bold text-success">
-                  {min !== Infinity ? `₹${min}` : "N/A"}
-                </td>
+                    {/* PRICES */}
+                    {platforms.map((p) => {
+                      const value =
+                        item[p] != null ? item[p] * qty : null;
 
-                <td>
-                  <div className="d-flex align-items-center gap-2">
-                    <button
-                      className="btn btn-sm btn-outline-secondary"
-                      onClick={() => updateQty(i, -1)}
-                    >
-                      -
-                    </button>
+                      const isBest =
+                        value && min && value === min * qty;
 
-                    <span className="fw-bold">{qty}</span>
+                      return (
+                        <td key={p}>
+                          {value ? (
+                            <motion.span
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.95 }}
+                              className={`price-pill ${
+                                isBest ? "best" : ""
+                              }`}
+                            >
+                              ₹{value}
+                            </motion.span>
+                          ) : (
+                            "-"
+                          )}
+                        </td>
+                      );
+                    })}
 
-                    <button
-                      className="btn btn-sm btn-outline-success"
-                      onClick={() => updateQty(i, 1)}
-                    >
-                      +
-                    </button>
-                  </div>
-                </td>
+                    {/* BEST */}
+                    <td>
+                      {min ? (
+                        <span className="best-pill">
+                          ₹{min * qty}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
 
-                <td>
-                  <button
-                    className="btn btn-sm btn-danger"
-                    onClick={() => handleDelete(i)}
-                  >
-                    ❌
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                    {/* QTY */}
+                    <td>
+                      <div className="qty-box">
+                        <motion.button
+                          whileTap={{ scale: 0.8 }}
+                          onClick={() => updateQty(i, -1)}
+                        >
+                          −
+                        </motion.button>
+
+                        <span>{qty}</span>
+
+                        <motion.button
+                          whileTap={{ scale: 0.8 }}
+                          onClick={() => updateQty(i, 1)}
+                        >
+                          +
+                        </motion.button>
+                      </div>
+                    </td>
+
+                    {/* DELETE */}
+                    <td>
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        className="delete-btn"
+                        onClick={() => handleDelete(i)}
+                      >
+                        ✕
+                      </motion.button>
+                    </td>
+                  </motion.tr>
+                );
+              })}
+            </AnimatePresence>
+          </tbody>
+        </table>
+      </div>
+    </motion.div>
   );
 };
 

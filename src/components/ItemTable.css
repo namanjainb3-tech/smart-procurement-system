@@ -1,0 +1,92 @@
+/* CENTER THE WHOLE ITEM BLOCK */
+.item-td {
+  text-align: center !important;   /* override bootstrap */
+  padding-left: 0 !important;
+}
+
+/* CENTER FLEX CONTENT */
+.item-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;   /* THIS IS THE KEY */
+  gap: 12px;
+}
+
+/* OPTIONAL: make sure no weird shifting */
+.item-name {
+  text-align: left; /* keeps text clean beside image */
+}
+
+/* IMAGE BOX (KEY FIX) */
+.img-box {
+  width: 44px;
+  height: 44px;
+  background: #f3f4f6;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* IMAGE */
+.img-box img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+/* TEXT */
+.item-name {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* PRICE */
+.price-pill {
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #e5e7eb;
+}
+
+.price-pill.best {
+  background: #16a34a;
+  color: white;
+}
+
+/* BEST */
+.best-pill {
+  background: #16a34a;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 12px;
+}
+
+/* QTY */
+.qty-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.qty-box button {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: white;
+}
+
+/* DELETE */
+.delete-btn {
+  border: 1px solid red;
+  color: red;
+  background: transparent;
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+
+.delete-btn:hover{
+    background-color: bisque
+}

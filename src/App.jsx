@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
-import FileUpload from "./components/FileUpload";
+import { useState, useEffect } from "react";
+import SearchBox from "./components/SearchBox";
 import ItemTable from "./components/ItemTable";
 import Summary from "./components/Summary";
 import PriceChart from "./components/PriceChart";
-import { FaMoon, FaSun } from "react-icons/fa";
-import SearchBox from "./components/SearchBox";
+import FileUpload from "./components/FileUpload";
 
 function App() {
   const [items, setItems] = useState(() => {
@@ -12,89 +11,91 @@ function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const [dark, setDark] = useState(false);
+  const [query, setQuery] = useState("");
+  const [dark, setDark] = useState(
+    localStorage.getItem("dark") === "true"
+  );
 
   useEffect(() => {
     localStorage.setItem("items", JSON.stringify(items));
   }, [items]);
 
-  // 🔥 CLEAN TOTAL CALCULATION (NO MOCK DATA)
-  const calculateTotals = () => {
-    let amazon = 0,
-      flipkart = 0,
-      bbasket = 0;
-
-    items.forEach((item) => {
-      const qty = item.qty || 1;
-
-      amazon += (Number(item.amazon) || 0) * qty;
-      flipkart += (Number(item.flipkart) || 0) * qty;
-      bbasket += (Number(item.bbasket) || 0) * qty;
-    });
-
-    return { amazon, flipkart, bbasket };
-  };
-
-  const totals = calculateTotals();
+  useEffect(() => {
+    localStorage.setItem("dark", dark);
+    document.body.style.background = dark ? "#111" : "#f8fafc";
+  }, [dark]);
 
   return (
-    <div
-      className={
-        dark ? "bg-dark text-light min-vh-100" : "bg-light min-vh-100"
-      }
-    >
-      {/* 🔥 NAVBAR */}
-      <nav
-        className={`navbar ${
-          dark ? "navbar-dark bg-dark" : "navbar-dark bg-primary"
-        } px-4`}
+    <div className={`container mt-3 ${dark ? "text-light" : ""}`}>
+
+      {/* NAVBAR */}
+      <div
+        className="d-flex justify-content-between align-items-center px-4 py-3 mb-4 rounded"
+        style={{
+          background: "linear-gradient(90deg,#2563eb,#4f46e5)",
+          color: "white",
+          height: "70px"
+        }}
       >
-        <span className="navbar-brand">Smart Procurement</span>
+        <h5 className="m-0">🛒 Smart Procurement</h5>
 
         <button
-          className="btn btn-outline-light"
+          className="btn btn-light btn-sm"
           onClick={() => setDark(!dark)}
         >
-          {dark ? <FaSun /> : <FaMoon />}
+          {dark ? "☀️" : "🌙"}
         </button>
-      </nav>
+      </div>
 
-      <div className="container mt-4">
-        {/* 🔍 SEARCH */}
-        <SearchBox dark={dark} setItems={setItems} />
+      {/* HERO */}
+      <div className="card p-5 text-center mb-4 shadow-sm">
+        <h2 className="fw-bold">
+          Find the Cheapest Way to Shop 🧠
+        </h2>
 
-        {/* 📂 FILE UPLOAD */}
-        <FileUpload setItems={setItems} dark={dark} />
+        <p className="text-muted">
+          Compare Blinkit, Zepto, Swiggy & more instantly
+        </p>
 
-        {/* 🗑 CLEAR */}
-        <div className="d-flex justify-content-end mb-3">
+        <div className="d-flex justify-content-center gap-2 mt-2">
+          {["milk", "rice", "oil", "soap"].map((item) => (
+            <button
+              key={item}
+              className="btn btn-light"
+              onClick={() => setQuery(item)}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <SearchBox setItems={setItems} query={query} setQuery={setQuery} />
+
+      <FileUpload setItems={setItems} dark={dark} />
+
+      <ItemTable items={items} setItems={setItems} />
+
+      <div className="row mt-4">
+        <div className="col-md-6">
+          <Summary items={items} />
+        </div>
+
+        <div className="col-md-6">
+          <PriceChart items={items} />
+        </div>
+      </div>
+
+      {items.length > 0 && (
+        <div className="text-center mt-4">
           <button
             className="btn btn-danger"
-            onClick={() => {
-              if (window.confirm("Clear all items?")) {
-                setItems([]);
-                localStorage.removeItem("items");
-              }
-            }}
+            onClick={() => setItems([])}
           >
-            🗑 Clear All
+            🗑 Clear Cart
           </button>
         </div>
-
-        {/* 📊 TABLE + SUMMARY */}
-        <div className="row">
-          <div className="col-lg-8">
-            <ItemTable items={items} setItems={setItems} dark={dark} />
-          </div>
-
-          <div className="col-lg-4">
-            <Summary items={items} dark={dark} />
-          </div>
-        </div>
-
-        {/* 📈 CHART (FIXED) */}
-        <PriceChart items={items} dark={dark} />
-      </div>
+      )}
     </div>
   );
 }

@@ -4,52 +4,54 @@ import {
   CategoryScale,
   LinearScale,
   Tooltip,
-  Legend
+  Legend,
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
 
-ChartJS.register(
-  BarElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Legend
-);
-
-const calculateTotals = (items = []) => {
-  let amazon = 0, flipkart = 0, bbasket = 0;
-
-  items.forEach((item) => {
-    const qty = item?.qty || 1;
-
-    const a = Number(item?.amazon) || 0;
-    const f = Number(item?.flipkart) || 0;
-    const b = Number(item?.bbasket) || 0;
-
-    amazon += a * qty;
-    flipkart += f * qty;
-    bbasket += b * qty;
-  });
-
-  return { amazon, flipkart, bbasket };
-};
+ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const PriceChart = ({ items = [], dark }) => {
+  if (!items.length) return null;
 
-  const { amazon, flipkart, bbasket } = calculateTotals(items);
+  const platforms = ["blinkit", "zepto", "swiggy", "bbasket"];
+
+  // 🔥 calculate totals (ignore nulls)
+  const totals = {};
+
+  platforms.forEach((p) => {
+    totals[p] = 0;
+  });
+
+  items.forEach((item) => {
+    const qty = item.qty || 1;
+
+    platforms.forEach((p) => {
+      if (typeof item[p] === "number") {
+        totals[p] += item[p] * qty;
+      }
+    });
+  });
+
+  // 🔥 remove platforms with 0 values
+  const validEntries = Object.entries(totals).filter(([_, v]) => v > 0);
+
+  const labels = validEntries.map(([k]) => k);
+  const values = validEntries.map(([_, v]) => v);
 
   const data = {
-    labels: ["Amazon", "Flipkart", "BigBasket"],
+    labels,
     datasets: [
       {
         label: "Total Cost",
-        data: [amazon, flipkart, bbasket],
+        data: values,
         backgroundColor: [
-          "rgba(255,153,0,0.9)",
-          "rgba(40,116,240,0.9)",
-          "rgba(52,168,83,0.9)",
+          "#facc15", // Blinkit
+          "#a855f7", // Zepto
+          "#fb923c", // Swiggy
+          "#22c55e", // BigBasket
         ],
-        borderRadius: 6,
+        borderRadius: 8,
+        barThickness: 40,
       },
     ],
   };
@@ -60,9 +62,7 @@ const PriceChart = ({ items = [], dark }) => {
 
     plugins: {
       legend: {
-        labels: {
-          color: dark ? "#fff" : "#000",
-        },
+        display: false,
       },
       tooltip: {
         callbacks: {
@@ -75,6 +75,10 @@ const PriceChart = ({ items = [], dark }) => {
       x: {
         ticks: {
           color: dark ? "#fff" : "#000",
+          font: { size: 12 },
+        },
+        grid: {
+          display: false,
         },
       },
       y: {
@@ -87,11 +91,21 @@ const PriceChart = ({ items = [], dark }) => {
   };
 
   return (
-    <div className={`card mt-4 p-3 ${dark ? "bg-secondary text-light" : ""}`}>
-      <h5>📊 Platform Comparison</h5>
+    <div
+      className={`card mt-4 p-3 shadow-sm ${
+        dark ? "bg-secondary text-light" : ""
+      }`}
+    >
+      <h5 className="text-center mb-3">📊 Platform Comparison</h5>
 
-      {/* 🔥 FIXED SIZE */}
-      <div style={{ height: "300px", maxWidth: "600px", margin: "0 auto" }}>
+      {/* 🔥 COMPACT CHART */}
+      <div
+        style={{
+          height: "240px",
+          maxWidth: "500px",
+          margin: "0 auto",
+        }}
+      >
         <Bar data={data} options={options} />
       </div>
     </div>

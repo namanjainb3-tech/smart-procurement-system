@@ -1,86 +1,89 @@
-const Summary = ({ items, dark }) => {
-  if (!items.length) return null;
+const Summary = ({ items }) => {
+  if (!items.length) {
+    return (
+      <div className="card p-5 text-center shadow-sm">
+        <h5 className="fw-bold">💡 Smart Insights</h5>
+        <p className="text-muted">Add items to unlock insights</p>
+      </div>
+    );
+  }
 
-  let amazon = 0,
-    flipkart = 0,
-    bbasket = 0,
-    optimized = 0;
+  const platforms = ["blinkit", "zepto", "swiggy", "bbasket"];
 
-  const plan = {
-    Amazon: [],
-    Flipkart: [],
-    BigBasket: [],
+  const totals = {
+    blinkit: 0,
+    zepto: 0,
+    swiggy: 0,
+    bbasket: 0,
   };
 
   items.forEach((item) => {
     const qty = item.qty || 1;
 
-    const prices = {
-      Amazon: item.amazon ? item.amazon * qty : Infinity,
-      Flipkart: item.flipkart ? item.flipkart * qty : Infinity,
-      BigBasket: item.bbasket ? item.bbasket * qty : Infinity,
-    };
-
-    // totals
-    amazon += prices.Amazon !== Infinity ? prices.Amazon : 0;
-    flipkart += prices.Flipkart !== Infinity ? prices.Flipkart : 0;
-    bbasket += prices.BigBasket !== Infinity ? prices.BigBasket : 0;
-
-    // best per item
-    const best = Object.entries(prices).sort((a, b) => a[1] - b[1])[0];
-
-    if (best[1] !== Infinity) {
-      optimized += best[1];
-      plan[best[0]].push(item.item);
-    }
+    platforms.forEach((p) => {
+      if (typeof item[p] === "number") {
+        totals[p] += item[p] * qty;
+      }
+    });
   });
 
-  const bestPlatform =
-    Math.min(amazon, flipkart, bbasket) === amazon
-      ? "Amazon"
-      : Math.min(amazon, flipkart, bbasket) === flipkart
-      ? "Flipkart"
-      : "BigBasket";
+  const validTotals = Object.entries(totals).filter(([_, v]) => v > 0);
 
-  const worst = Math.max(amazon, flipkart, bbasket);
-  const savings = worst - optimized;
+  const best = validTotals.length
+    ? validTotals.reduce((a, b) => (a[1] < b[1] ? a : b))
+    : null;
+
+  const values = validTotals.map(([_, v]) => v);
+  const savings = Math.max(...values) - Math.min(...values);
 
   return (
-    <div className={`card p-4 ${dark ? "bg-secondary text-light" : ""}`}>
-      <h5>💡 Insights</h5>
+    <div className="card p-4 shadow-sm">
 
-      {/* Platform Totals */}
-      <div className="mb-2">
-        <p>Amazon: ₹{amazon}</p>
-        <p>Flipkart: ₹{flipkart}</p>
-        <p>BigBasket: ₹{bbasket}</p>
-      </div>
+      <h5 className="mb-3">💡 Insights</h5>
 
-      <hr />
-
-      {/* Optimized */}
-      <h6 className="text-success">Optimized Cost: ₹{optimized}</h6>
-
-      <div className="alert alert-primary">
-        💸 You save ₹{savings}
-      </div>
-
-      <div className="alert alert-success">
-        🏆 Best Platform Overall: {bestPlatform}
-      </div>
-
-      {/* Buy Plan */}
-      <h6 className="mt-3">🛒 Optimized Buy Plan</h6>
-
-      {Object.entries(plan).map(([platform, list]) =>
-        list.length ? (
-          <div key={platform} className="mb-2">
-            <strong>{platform}:</strong>
-            <div style={{ fontSize: "0.9rem" }}>
-              {list.join(", ")}
+      {/* 🔥 PLATFORM CARDS */}
+      <div className="row">
+        {validTotals.map(([k, v]) => (
+          <div className="col-6 mb-2" key={k}>
+            <div
+              className="p-3 text-center rounded"
+              style={{
+                background: k === best?.[0] ? "#dcfce7" : "#f8fafc",
+                border:
+                  k === best?.[0]
+                    ? "2px solid #16a34a"
+                    : "1px solid #e5e7eb",
+              }}
+            >
+              <div style={{ textTransform: "capitalize" }}>{k}</div>
+              <strong>₹{v}</strong>
+              {k === best?.[0] && (
+                <div className="text-success small">🏆 Best</div>
+              )}
             </div>
           </div>
-        ) : null
+        ))}
+      </div>
+
+      {/* 🔥 SAVINGS BANNER */}
+      {best && savings > 0 && (
+        <div
+          className="mt-3 p-3 text-center rounded"
+          style={{
+            background: "linear-gradient(135deg, #16a34a, #22c55e)",
+            color: "white",
+            fontWeight: "600",
+          }}
+        >
+          💰 You save ₹{savings} by choosing {best[0]}
+        </div>
+      )}
+
+      {/* 🔥 AI LINE */}
+      {best && (
+        <div className="mt-2 text-center text-muted small">
+          🤖 Buy most items from <strong>{best[0]}</strong> for max savings
+        </div>
       )}
     </div>
   );

@@ -1,7 +1,5 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { priceData } from "../mockData";
-import { normalizeName } from "../utils";
 
 const FileUpload = ({ setItems, dark }) => {
   const [loading, setLoading] = useState(false);
@@ -44,32 +42,6 @@ const FileUpload = ({ setItems, dark }) => {
     return Object.values(row)[1];
   };
 
-  const cleanName = (name) => {
-    name = name.toLowerCase();
-
-    if (name.includes("soap")) return "bathing soap";
-    if (name.includes("oil")) return "cooking oil";
-    if (name.includes("tea")) return "tea powder";
-    if (name.includes("flour") || name.includes("atta")) return "wheat flour";
-    if (name.includes("dal")) return "lentils";
-    if (name.includes("milk")) return "milk packet";
-
-    return name;
-  };
-
-  const blendPrice = (base, api) => {
-    if (!base) return api || null;
-    if (!api) return base;
-  
-    const diff = Math.abs(api - base) / base;
-  
-    // ❌ if too different → ignore API
-    if (diff > 0.5) return base;
-  
-    // ✅ blend values
-    return Math.round((base + api) / 2);
-  };
-
   const processItems = async (json) => {
     setLoading(true);
 
@@ -77,7 +49,6 @@ const FileUpload = ({ setItems, dark }) => {
       const extractedItems = json
         .map((row) => {
           let name = getItemName(row);
-
           if (!name) return null;
 
           name = String(name).trim();
@@ -94,29 +65,26 @@ const FileUpload = ({ setItems, dark }) => {
         })
         .filter(Boolean);
 
-      const itemNames = extractedItems.map((i) => cleanName(i.item));
-
-      const res = await fetch("http://localhost:5000/api/bulk-search", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ items: itemNames }),
-      });
-
-      const data = await res.json();
+      // 🔥 CALL YOUR NEW BACKEND
+      const results = await Promise.all(
+        extractedItems.map(async (item) => {
+          const res = await fetch(
+            `http://localhost:5000/api/search?query=${item.item}`
+          );
+          return await res.json();
+        })
+      );
 
       const finalItems = extractedItems.map((item, i) => {
-        const apiData = data[i] || {};
-      
-        const normalized = normalizeName(item.item);
-        const fallback = priceData[normalized] || priceData.other;
-      
+        const apiData = results[i] || {};
+
         return {
           item: item.item,
-          amazon: blendPrice(fallback.amazon, apiData.amazon),
-          flipkart: blendPrice(fallback.flipkart, apiData.flipkart),
-          bbasket: blendPrice(fallback.bbasket, apiData.bbasket),
+          image: apiData.image,
+          blinkit: apiData.blinkit,
+          zepto: apiData.zepto,
+          swiggy: apiData.swiggy,
+          bbasket: apiData.bbasket,
           qty: 1,
         };
       });
@@ -130,14 +98,14 @@ const FileUpload = ({ setItems, dark }) => {
   };
 
   return (
-    <div className={`card p-4 mb-4 ${dark ? "bg-secondary text-light" : ""}`}>
+    <div className={`card p-4 mb-4 shadow-sm ${dark ? "bg-secondary text-light" : ""}`}>
       <h5>📂 Upload Excel File</h5>
 
       <input type="file" className="form-control" onChange={handleFile} />
 
       {loading && (
         <p className="mt-3 text-warning">
-          Fetching prices (optimized)... ⏳
+          Fetching prices... ⏳
         </p>
       )}
     </div>

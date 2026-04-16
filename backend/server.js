@@ -9,115 +9,109 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const API_KEY = process.env.SERP_API_KEY;
-const cache = {};
+// 🔐 CONFIG
+const BASE_URL = "https://api.quickcommerceapi.com/v1/search";
+const API_KEY = process.env.QC_API_KEY;
 
-// 🔥 extract price safely
-function extractPrice(priceStr) {
-  if (!priceStr) return null;
-  const num = Number(priceStr.replace(/[^\d]/g, ""));
-  return num > 5000 ? null : num;
-}
+// 📍 Default location (can make dynamic later)
+const LAT = 28.661252;
+const LON = 77.284175;
 
-// 🔥 clean garbage prices
-function cleanPrices(arr) {
-  const valid = arr.filter(p => p != null);
-  if (valid.length < 2) return arr;
-
-  const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
-
-  return arr.map(p => {
-    if (!p) return null;
-    if (p < avg * 0.5 || p > avg * 2) return null;
-    return p;
-  });
-}
-
-// 🔥 main search logic
-async function searchItem(query) {
-  if (cache[query]) return cache[query];
-
-  let amazon = null;
-  let flipkart = null;
-  let bbasket = null;
-
+// 🔥 Fetch data from ONE platform
+async function fetchPlatform(query, platform) {
   try {
-    const response = await axios.get("https://serpapi.com/search.json", {
+    const res = await axios.get(BASE_URL, {
       params: {
-        engine: "google_shopping",
-        q: `${query} 1kg`, // 🔥 standardization
-        api_key: API_KEY,
-        hl: "en",
-        gl: "in",
+        q: query,
+        lat: LAT,
+        lon: LON,
+        platform: platform,
+      },
+      headers: {
+        "X-API-Key": API_KEY, // ✅ correct auth
       },
     });
 
-    const results = response.data.shopping_results || [];
+    // 🔍 Debug (optional)
+    console.log(`\n🔍 ${platform}:`, res.data?.data?.products?.length || 0, "products");
 
-    results.forEach((item) => {
-      const source = item.source?.toLowerCase() || "";
-      const price = extractPrice(item.price);
+    const products = res.data?.data?.products || [];
 
-      if (!price) return;
+    if (!products.length) return null;
 
-      if (source.includes("amazon")) {
-        amazon = amazon ? Math.min(amazon, price) : price;
-      }
+    const best = products[0]; // top result
 
-      if (source.includes("flipkart")) {
-        flipkart = flipkart ? Math.min(flipkart, price) : price;
-      }
-
-      if (source.includes("bigbasket")) {
-        if (price < 50 || price > 1000) return; // 🔥 filter weird
-        bbasket = bbasket ? Math.min(bbasket, price) : price;
-      }
-    });
+    return {
+      price: Number(best.offer_price), // ✅ convert to number
+      image: best.images?.[0] || null,
+      platform: platform,
+    };
 
   } catch (err) {
-    console.log("⚠️ API failed");
+    console.log(`❌ ${platform}:`, err.response?.data || err.message);
+    return null;
   }
-
-  // 🔥 remove extreme values
-  [amazon, flipkart, bbasket] = cleanPrices([
-    amazon,
-    flipkart,
-    bbasket
-  ]);
-
-  const data = { name: query, amazon, flipkart, bbasket };
-
-  cache[query] = data;
-  return data;
 }
 
-// 🔥 single search
-app.get("/api/bulk-search", async (req, res) => {
-  const query = req.query.query;
-  if (!query) return res.status(400).json({ error: "Query required" });
+// 🔥 MAIN SEARCH API
+app.get("/api/search", async (req, res) => {
+  const { query } = req.query;
+
+  if (!query) {
+    return res.status(400).json({ error: "Query required" });
+  }
 
   try {
-    const data = await searchItem(query);
+    const platforms = [
+      "BlinkIt",   // ⚠️ exact case required
+      "Zepto",
+      "Swiggy",
+      "BigBasket",
+      "DMart",
+      "JioMart"
+    ];
+
+    const results = await Promise.all(
+      platforms.map((p) => fetchPlatform(query, p))
+    );
+
+    const valid = results.filter(Boolean);
+
+    // 🔥 final structured response
+    let data = {
+      name: query,
+      image: null,
+      blinkit: null,
+      zepto: null,
+      swiggy: null,
+      bbasket: null,
+      dmart: null,
+      jiomart: null,
+    };
+
+    valid.forEach((item) => {
+      // first available image
+      if (!data.image && item.image) {
+        data.image = item.image;
+      }
+
+      if (item.platform === "BlinkIt") data.blinkit = item.price;
+      if (item.platform === "Zepto") data.zepto = item.price;
+      if (item.platform === "Swiggy") data.swiggy = item.price;
+      if (item.platform === "BigBasket") data.bbasket = item.price;
+      if (item.platform === "DMart") data.dmart = item.price;
+      if (item.platform === "JioMart") data.jiomart = item.price;
+    });
+
     res.json(data);
-  } catch {
-    res.status(500).json({ error: "Failed" });
+
+  } catch (err) {
+    console.log("🔥 Server error:", err.message);
+    res.status(500).json({ error: "Failed to fetch data" });
   }
 });
 
-// 🔥 bulk search
-app.post("/api/bulk-search", async (req, res) => {
-  const { items } = req.body;
-
-  if (!items || !items.length) {
-    return res.status(400).json({ error: "Items required" });
-  }
-
-  try {
-    const results = await Promise.all(items.map(searchItem));
-    res.json(results);
-  } catch {
-    res.status(500).json({ error: "Bulk fetch failed" });
-  }
+// 🚀 START SERVER
+app.listen(5000, () => {
+  console.log("🚀 Server running at http://localhost:5000");
 });
-
-app.listen(5000, () => console.log("🚀 Server running on 5000"));
