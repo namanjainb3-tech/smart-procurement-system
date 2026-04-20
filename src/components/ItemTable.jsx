@@ -2,9 +2,23 @@ import "./ItemTable.css";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ItemTable = ({ items, setItems }) => {
-  if (!items.length) return null;
+  if (!items || !items.length) return null;
 
-  const platforms = ["blinkit", "zepto", "swiggy", "bbasket"];
+  const platforms = [
+    "amazon",
+    "flipkart",
+    "blinkit",
+    "zepto",
+    "swiggy",
+    "bbasket",
+  ];
+
+  // ✅ Safe number parser (NO null → 0 bug)
+  const getNumber = (val) => {
+    if (val === null || val === undefined) return null;
+    const num = Number(val);
+    return isNaN(num) ? null : num;
+  };
 
   const updateQty = (index, change) => {
     setItems((prev) =>
@@ -35,9 +49,13 @@ const ItemTable = ({ items, setItems }) => {
           <thead>
             <tr>
               <th>Item</th>
+
               {platforms.map((p) => (
-                <th key={p}>{p}</th>
+                <th key={p} style={{ textTransform: "capitalize" }}>
+                  {p}
+                </th>
               ))}
+
               <th>Best</th>
               <th>Qty</th>
               <th></th>
@@ -49,11 +67,15 @@ const ItemTable = ({ items, setItems }) => {
               {items.map((item, i) => {
                 const qty = item.qty || 1;
 
-                const prices = platforms
-                  .map((p) => item[p])
-                  .filter((v) => v != null);
+                // ✅ Always recompute fresh values (fixes flipkart issue)
+                const validPrices = platforms
+                  .map((p) => getNumber(item[p]))
+                  .filter((v) => v !== null);
 
-                const min = prices.length ? Math.min(...prices) : null;
+                const min =
+                  validPrices.length > 0
+                    ? Math.min(...validPrices)
+                    : null;
 
                 return (
                   <motion.tr
@@ -61,7 +83,6 @@ const ItemTable = ({ items, setItems }) => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -50 }}
-                    transition={{ duration: 0.3 }}
                   >
                     {/* ITEM */}
                     <td className="item-td">
@@ -76,32 +97,37 @@ const ItemTable = ({ items, setItems }) => {
                             }
                           />
                         </div>
-                        <span className="item-name">{item.item}</span>
+                        <span className="item-name">
+                          {item.item}
+                        </span>
                       </div>
                     </td>
 
                     {/* PRICES */}
                     {platforms.map((p) => {
+                      const num = getNumber(item[p]);
                       const value =
-                        item[p] != null ? item[p] * qty : null;
+                        num !== null ? num * qty : null;
 
                       const isBest =
-                        value && min && value === min * qty;
+                        num !== null &&
+                        min !== null &&
+                        num === min;
 
                       return (
                         <td key={p}>
-                          {value ? (
-                            <motion.span
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.95 }}
+                          {value !== null ? (
+                            <span
                               className={`price-pill ${
                                 isBest ? "best" : ""
                               }`}
                             >
                               ₹{value}
-                            </motion.span>
+                            </span>
                           ) : (
-                            "-"
+                            <span className="text-muted">
+                              -
+                            </span>
                           )}
                         </td>
                       );
@@ -109,7 +135,7 @@ const ItemTable = ({ items, setItems }) => {
 
                     {/* BEST */}
                     <td>
-                      {min ? (
+                      {min !== null ? (
                         <span className="best-pill">
                           ₹{min * qty}
                         </span>
@@ -121,34 +147,24 @@ const ItemTable = ({ items, setItems }) => {
                     {/* QTY */}
                     <td>
                       <div className="qty-box">
-                        <motion.button
-                          whileTap={{ scale: 0.8 }}
-                          onClick={() => updateQty(i, -1)}
-                        >
+                        <button onClick={() => updateQty(i, -1)}>
                           −
-                        </motion.button>
-
+                        </button>
                         <span>{qty}</span>
-
-                        <motion.button
-                          whileTap={{ scale: 0.8 }}
-                          onClick={() => updateQty(i, 1)}
-                        >
+                        <button onClick={() => updateQty(i, 1)}>
                           +
-                        </motion.button>
+                        </button>
                       </div>
                     </td>
 
                     {/* DELETE */}
                     <td>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                      <button
                         className="delete-btn"
                         onClick={() => handleDelete(i)}
                       >
                         ✕
-                      </motion.button>
+                      </button>
                     </td>
                   </motion.tr>
                 );

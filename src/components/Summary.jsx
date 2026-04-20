@@ -8,14 +8,12 @@ const Summary = ({ items }) => {
     );
   }
 
-  const platforms = ["blinkit", "zepto", "swiggy", "bbasket"];
+  // ✅ AMAZON ADDED
+  const platforms = ["amazon", "flipkart", "blinkit", "zepto", "swiggy", "bbasket"];
 
-  const totals = {
-    blinkit: 0,
-    zepto: 0,
-    swiggy: 0,
-    bbasket: 0,
-  };
+  const totals = {};
+
+  platforms.forEach((p) => (totals[p] = 0));
 
   items.forEach((item) => {
     const qty = item.qty || 1;
@@ -34,14 +32,13 @@ const Summary = ({ items }) => {
     : null;
 
   const values = validTotals.map(([_, v]) => v);
-  const savings = Math.max(...values) - Math.min(...values);
+  const savings =
+    values.length > 1 ? Math.max(...values) - Math.min(...values) : 0;
 
   return (
     <div className="card p-4 shadow-sm">
-
       <h5 className="mb-3">💡 Insights</h5>
 
-      {/* 🔥 PLATFORM CARDS */}
       <div className="row">
         {validTotals.map(([k, v]) => (
           <div className="col-6 mb-2" key={k}>
@@ -65,7 +62,6 @@ const Summary = ({ items }) => {
         ))}
       </div>
 
-      {/* 🔥 SAVINGS BANNER */}
       {best && savings > 0 && (
         <div
           className="mt-3 p-3 text-center rounded"
@@ -79,7 +75,6 @@ const Summary = ({ items }) => {
         </div>
       )}
 
-      {/* 🔥 AI LINE */}
       {best && (
         <div className="mt-2 text-center text-muted small">
           🤖 Buy most items from <strong>{best[0]}</strong> for max savings

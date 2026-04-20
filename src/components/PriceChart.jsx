@@ -13,14 +13,11 @@ ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 const PriceChart = ({ items = [], dark }) => {
   if (!items.length) return null;
 
-  const platforms = ["blinkit", "zepto", "swiggy", "bbasket"];
+  const platforms = ["amazon", "flipkart", "blinkit", "zepto", "swiggy", "bbasket"];
 
-  // 🔥 calculate totals (ignore nulls)
   const totals = {};
 
-  platforms.forEach((p) => {
-    totals[p] = 0;
-  });
+  platforms.forEach((p) => (totals[p] = 0));
 
   items.forEach((item) => {
     const qty = item.qty || 1;
@@ -32,11 +29,26 @@ const PriceChart = ({ items = [], dark }) => {
     });
   });
 
-  // 🔥 remove platforms with 0 values
   const validEntries = Object.entries(totals).filter(([_, v]) => v > 0);
+
+  // ✅ SAFETY CHECK (VERY IMPORTANT)
+  if (!validEntries.length) return null;
 
   const labels = validEntries.map(([k]) => k);
   const values = validEntries.map(([_, v]) => v);
+
+  const colorMap = {
+      amazon: "#3b82f6",
+      flipkart: "#2874f0", 
+      blinkit: "#facc15",
+      zepto: "#a855f7",
+      swiggy: "#fb923c",
+      bbasket: "#22c55e",
+  };
+
+  const backgroundColors = labels.map(
+    (l) => colorMap[l] || "#999" // fallback to avoid crash
+  );
 
   const data = {
     labels,
@@ -44,12 +56,7 @@ const PriceChart = ({ items = [], dark }) => {
       {
         label: "Total Cost",
         data: values,
-        backgroundColor: [
-          "#facc15", // Blinkit
-          "#a855f7", // Zepto
-          "#fb923c", // Swiggy
-          "#22c55e", // BigBasket
-        ],
+        backgroundColor: backgroundColors,
         borderRadius: 8,
         barThickness: 40,
       },
@@ -59,34 +66,8 @@ const PriceChart = ({ items = [], dark }) => {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-
     plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        callbacks: {
-          label: (ctx) => `₹ ${ctx.raw}`,
-        },
-      },
-    },
-
-    scales: {
-      x: {
-        ticks: {
-          color: dark ? "#fff" : "#000",
-          font: { size: 12 },
-        },
-        grid: {
-          display: false,
-        },
-      },
-      y: {
-        beginAtZero: true,
-        ticks: {
-          color: dark ? "#fff" : "#000",
-        },
-      },
+      legend: { display: false },
     },
   };
 
@@ -98,14 +79,7 @@ const PriceChart = ({ items = [], dark }) => {
     >
       <h5 className="text-center mb-3">📊 Platform Comparison</h5>
 
-      {/* 🔥 COMPACT CHART */}
-      <div
-        style={{
-          height: "240px",
-          maxWidth: "500px",
-          margin: "0 auto",
-        }}
-      >
+      <div style={{ height: "240px", maxWidth: "500px", margin: "0 auto" }}>
         <Bar data={data} options={options} />
       </div>
     </div>

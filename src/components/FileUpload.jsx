@@ -69,7 +69,7 @@ const FileUpload = ({ setItems, dark }) => {
       const results = await Promise.all(
         extractedItems.map(async (item) => {
           const res = await fetch(
-            `https://smart-procurement-system.onrender.com/api/search?query=${item.item}`
+            `http://localhost:5000/api/search?query=${item.item}`
           );
           return await res.json();
         })
@@ -81,10 +81,11 @@ const FileUpload = ({ setItems, dark }) => {
         return {
           item: item.item,
           image: apiData.image,
-          blinkit: apiData.blinkit,
-          zepto: apiData.zepto,
-          swiggy: apiData.swiggy,
-          bbasket: apiData.bbasket,
+          amazon: normalize(apiData.amazon),
+          blinkit: normalize(apiData.blinkit),
+          zepto: normalize(apiData.zepto),
+          swiggy: normalize(apiData.swiggy),
+          bbasket: normalize(apiData.bbasket),
           qty: 1,
         };
       });
