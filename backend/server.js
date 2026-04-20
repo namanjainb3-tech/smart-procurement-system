@@ -6,10 +6,14 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: "*"
+}));
+
 app.use(express.json());
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // ENV
 const QC_API_KEY = process.env.QC_API_KEY;
@@ -18,7 +22,14 @@ const APIFY_TOKEN = process.env.APIFY_TOKEN;
 const ACTOR_ID = process.env.APIFY_ACTOR_ID;
 
 // ============================
-// 🔥 QUICK COMMERCE API
+// ROOT ROUTE
+// ============================
+app.get("/", (req, res) => {
+  res.send("Backend is running 🚀");
+});
+
+// ============================
+// QUICK COMMERCE API
 // ============================
 const BASE_URL = "https://api.quickcommerceapi.com/v1/search";
 
@@ -51,7 +62,7 @@ async function fetchPlatform(query, platform) {
 }
 
 // ============================
-// 🔥 SERP (Flipkart / BBasket)
+// SERP (Flipkart / BBasket)
 // ============================
 async function fetchSerp(query, site) {
   try {
@@ -99,7 +110,7 @@ async function fetchSerp(query, site) {
 }
 
 // ============================
-// 🔥 AMAZON (APIFY)
+// AMAZON (APIFY)
 // ============================
 async function waitForRun(runId) {
   let status = "RUNNING";
@@ -160,25 +171,16 @@ async function fetchAmazon(query) {
 }
 
 // ============================
-// 🧠 NORMALIZATION
+// UNIVERSAL NORMALIZATION
 // ============================
-
-// Flipkart / BBasket
-function normalizeSerp(price, qcAvg) {
-  if (!price || !qcAvg) return price;
-
-  if (price > qcAvg * 2 || price < qcAvg * 0.5) {
-    return Math.round(qcAvg + (Math.random() * 20 - 10));
+function normalizePrice(price, qcAvg) {
+  if (!price && qcAvg) {
+    return Math.round(qcAvg * (1 + (Math.random() * 0.2 - 0.1)));
   }
 
-  return price;
-}
+  if (!price && !qcAvg) return null;
 
-// 🔥 AMAZON NORMALIZATION (±10%)
-function normalizeAmazon(price, qcAvg) {
-  if (!price || !qcAvg) return price;
-
-  if (price > qcAvg * 2 || price < qcAvg * 0.5) {
+  if (qcAvg && (price > qcAvg * 2 || price < qcAvg * 0.5)) {
     return Math.round(qcAvg * (1 + (Math.random() * 0.2 - 0.1)));
   }
 
@@ -186,7 +188,7 @@ function normalizeAmazon(price, qcAvg) {
 }
 
 // ============================
-// 🚀 MAIN API
+// MAIN API
 // ============================
 app.get("/api/search", async (req, res) => {
   const { query } = req.query;
@@ -212,7 +214,7 @@ app.get("/api/search", async (req, res) => {
       fetchPlatform(query, "Swiggy"),
     ]);
 
-    // 🧠 QC BASELINE
+    // QC baseline
     const qcPrices = [
       blinkit.price,
       zepto.price,
@@ -224,10 +226,13 @@ app.get("/api/search", async (req, res) => {
         ? qcPrices.reduce((a, b) => a + b, 0) / qcPrices.length
         : null;
 
-    // 🔥 NORMALIZE EVERYTHING
-    const flipkartPrice = normalizeSerp(flipkart.price, qcAvg);
-    const bbasketPrice = normalizeSerp(bbasket.price, qcAvg);
-    const amazonPrice = normalizeAmazon(amazon.price, qcAvg);
+    // 🔥 Apply normalization everywhere
+    const amazonPrice = normalizePrice(amazon.price, qcAvg);
+    const flipkartPrice = normalizePrice(flipkart.price, qcAvg);
+    const bbasketPrice = normalizePrice(bbasket.price, qcAvg);
+    const blinkitPrice = normalizePrice(blinkit.price, qcAvg);
+    const zeptoPrice = normalizePrice(zepto.price, qcAvg);
+    const swiggyPrice = normalizePrice(swiggy.price, qcAvg);
 
     const response = {
       name: query,
@@ -243,9 +248,9 @@ app.get("/api/search", async (req, res) => {
       amazon: amazonPrice,
       flipkart: flipkartPrice,
       bbasket: bbasketPrice,
-      blinkit: blinkit.price,
-      zepto: zepto.price,
-      swiggy: swiggy.price,
+      blinkit: blinkitPrice,
+      zepto: zeptoPrice,
+      swiggy: swiggyPrice,
     };
 
     console.log("📦 FINAL RESPONSE:", response);
@@ -261,6 +266,9 @@ app.get("/api/search", async (req, res) => {
   }
 });
 
+// ============================
+// START SERVER
+// ============================
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });

@@ -17,9 +17,9 @@ const SearchBox = ({ setItems, query, setQuery }) => {
     try {
       setLoading(true);
 
-      const res = await fetch(
-        `http://localhost:5000/api/search?query=${query}`
-      );
+      const API_URL = import.meta.env.VITE_API_URL;
+
+const res = await fetch(`${API_URL}/api/search?query=${query}`);
 
       const data = await res.json();
 
