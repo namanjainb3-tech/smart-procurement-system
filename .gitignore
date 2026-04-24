@@ -24,4 +24,8 @@ dist-ssr
 *.sln
 *.sw?
 
+.env
+backend/.env
+node_modules
+dist
 .vercel
