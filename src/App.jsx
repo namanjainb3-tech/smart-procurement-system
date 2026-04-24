@@ -25,7 +25,7 @@ function App() {
   
       try {
         const res = await fetch(
-          `http://smart-procurement-system.onrender.com/api/user-items/${user.google_id}`
+          `https://smart-procurement-system.onrender.com/api/user-items/${user.google_id}`
         );
   
         const data = await res.json();
