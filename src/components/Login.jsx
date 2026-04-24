@@ -13,7 +13,7 @@ const Login = ({ setUser }) => {
         google_id: result.user.uid,
       };
 
-      await fetch("http://smart-procurement-system.onrender.com/api/login", {
+      await fetch("https://smart-procurement-system.onrender.com/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -23,6 +23,7 @@ const Login = ({ setUser }) => {
 
       setUser(user);
       localStorage.setItem("user", JSON.stringify(user));
+      window.location.reload();
     } catch (err) {
       console.log("Login Error:", err.message);
     }

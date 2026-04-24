@@ -28,7 +28,7 @@ const SearchBox = ({ setItems, query, setQuery }) => {
       );
 
       await fetch(
-        "http://smart-procurement-system.onrender.com/api/user-item",
+        "https://smart-procurement-system.onrender.com/api/user-item",
         {
           method: "POST",
           headers: {
