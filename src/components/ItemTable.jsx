@@ -13,7 +13,6 @@ const ItemTable = ({ items, setItems }) => {
     "bbasket",
   ];
 
-  // Safe number parser
   const getNumber = (val) => {
     if (val === null || val === undefined) return null;
 
@@ -21,7 +20,6 @@ const ItemTable = ({ items, setItems }) => {
     return isNaN(num) ? null : num;
   };
 
-  // Find cheapest platform
   const getBestPlatform = (item) => {
     let bestPlatform = null;
     let bestPrice = Infinity;
@@ -38,7 +36,6 @@ const ItemTable = ({ items, setItems }) => {
     return bestPlatform;
   };
 
-  // Deep links
   const getDeepLink = (platform, query) => {
     const q = encodeURIComponent(query);
 
@@ -54,48 +51,34 @@ const ItemTable = ({ items, setItems }) => {
     return links[platform];
   };
 
-  // Trust badge
+  // ✅ FIXED COMPACT STATUS BADGE
   const getStatusBadge = (status) => {
-    if (status === "live") {
-      return (
-        <small
-          style={{
-            color: "#16a34a",
-            display: "block",
-            fontWeight: "600",
-            marginTop: "2px",
-          }}
-        >
-          ✓ Live
-        </small>
-      );
-    }
+    let color = "#16a34a";
+    let text = "Live";
 
     if (status === "cache") {
-      return (
-        <small
-          style={{
-            color: "#f59e0b",
-            display: "block",
-            fontWeight: "600",
-            marginTop: "2px",
-          }}
-        >
-          🕒 Cache
-        </small>
-      );
+      color = "#f59e0b";
+      text = "Cache";
+    }
+
+    if (status === "estimated") {
+      color = "#ef4444";
+      text = "Est";
     }
 
     return (
       <small
         style={{
-          color: "#ef4444",
+          color,
           display: "block",
           fontWeight: "600",
-          marginTop: "2px",
+          marginTop: "3px",
+          fontSize: "11px",
+          lineHeight: "1",
+          whiteSpace: "nowrap",
         }}
       >
-        ~ Est
+        {text}
       </small>
     );
   };
@@ -134,7 +117,7 @@ const ItemTable = ({ items, setItems }) => {
               {platforms.map((p) => (
                 <th
                   key={p}
-                  style={{ textTransform: "capitalize" }}
+                  style={{ textTransform: "capitalize", minWidth: "90px" }}
                 >
                   {p}
                 </th>
@@ -191,7 +174,7 @@ const ItemTable = ({ items, setItems }) => {
                       </div>
                     </td>
 
-                    {/* PLATFORM PRICES */}
+                    {/* PLATFORMS */}
                     {platforms.map((p) => {
                       const num = getNumber(item[p]);
 
@@ -210,7 +193,10 @@ const ItemTable = ({ items, setItems }) => {
                         "live";
 
                       return (
-                        <td key={p}>
+                        <td
+                          key={p}
+                          style={{ minWidth: "90px" }}
+                        >
                           {value !== null ? (
                             <>
                               <span
