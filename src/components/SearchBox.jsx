@@ -16,8 +16,7 @@ const SearchBox = ({ setItems, query, setQuery }) => {
     try {
       setLoading(true);
 
-      const API_URL = "http://localhost:5000";
-
+      const API_URL = "https://smart-procurement-system.onrender.com";
       const res = await fetch(
         `${API_URL}/api/search?query=${query}`
       );
@@ -29,7 +28,7 @@ const SearchBox = ({ setItems, query, setQuery }) => {
       );
 
       await fetch(
-        "http://localhost:5000/api/user-item",
+        "http://smart-procurement-system.onrender.com/api/user-item",
         {
           method: "POST",
           headers: {

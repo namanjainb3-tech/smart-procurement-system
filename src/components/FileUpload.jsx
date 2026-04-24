@@ -210,8 +210,7 @@ const FileUpload = ({ setItems, dark }) => {
           merged
         );
 
-      const API_URL =
-        "http://localhost:5000";
+      const API_URL = "https://smart-procurement-system.onrender.com";
 
       const results = [];
 
@@ -238,7 +237,7 @@ const FileUpload = ({ setItems, dark }) => {
           );
 
         await fetch(
-          "http://localhost:5000/api/user-item",
+          `${API_URL}/api/user-item`,
           {
             method: "POST",
             headers: {

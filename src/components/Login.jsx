@@ -13,7 +13,7 @@ const Login = ({ setUser }) => {
         google_id: result.user.uid,
       };
 
-      await fetch("http://localhost:5000/api/login", {
+      await fetch("http://smart-procurement-system.onrender.com/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
